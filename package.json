@@ -1,0 +1,24 @@
+{
+  "name": "tetris",
+  "version": "1.0.0",
+  "description": "",
+  "main": "tetris.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "tsc tetris.ts -w --sourceMap",
+    "serve": "python -m SimpleHTTPServer"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samanthamcgrath/tetris.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/samanthamcgrath/tetris/issues"
+  },
+  "homepage": "https://github.com/samanthamcgrath/tetris#readme",
+  "devDependencies": {
+    "tsc": "^1.20150623.0"
+  }
+}

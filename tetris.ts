@@ -4,8 +4,8 @@ let boardWidth = 10;
 let boardHeight = 20;
 
 // tile width and height in pixels
-let tileSize = 50;
-let tilePadding = 10;
+let tileSize = 30;
+let tilePadding = 5;
 
 let canvasWidth = boardWidth*tileSize;
 let canvasHeight = boardHeight*tileSize;
@@ -162,6 +162,10 @@ function handleKeyPress(event, board: Board) {
 			break;
 		case "z":
 			// Do something for "z"  key press. Rotate counterclockwise
+            if(!collision(board, {x: 1, y: 0})) {
+                move(board.gamePiece, {x: 1, y: 0});
+                draw = true;
+            }
 			break;
 		case "x":
 			// Do something for "x"  key press. Rotate clockwise
@@ -187,16 +191,23 @@ function collision(board: Board, direction: Direction) {
     board.gamePiece.shape.forEach(function (el) {
         let newX = el.x + direction.x;
         let newY = el.y + direction.y;
-        console.log(newX, newY);
-        console.log(board.tiles[newX][newY].isEmpty);
-        if(newX < 0 || newX > boardWidth || newY > boardHeight) {
+
+        if(newX < 0 || newX >= boardWidth || newY > boardHeight) {
             collision = true;
-        }
-        if(!board.tiles[newX][newY].isEmpty) {
+        } else if(!board.tiles[newX][newY].isEmpty) {
             collision = true;
         }
     });
     return collision;
+}
+
+function lockPiece(board: Board) {
+    board.gamePiece.shape.forEach(function (el) {
+        board.tiles[el.x][el.y].isEmpty = false;
+        board.tiles[el.x][el.y].colour = board.gamePiece.colour;
+    });
+    board.gamePiece = new GamePiece(7);
+    //TO DO - check if new piece spawning collides, game over?
 }
 
 //move piece
@@ -214,6 +225,7 @@ function tick(board: Board) {
     //then lock in piece 
     if(collision(board, {x: 0, y: 1})) {
         console.log("lock in piece");
+        lockPiece(board);
         return;
     } else {
         //if no collision
@@ -239,7 +251,7 @@ function main() {
     window.setInterval(() => {
         tick(board);
         drawBoard(board, ctx);
-    }, 5000);
+    }, 1000);
 
     console.log(canvas);
     document.addEventListener("keydown", function(event) {
