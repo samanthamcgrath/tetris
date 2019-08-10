@@ -30,86 +30,106 @@ enum Tetros {
     Z,
 }
 
-class Direction {
-    x: number;
-    y: number;
+class Coord {
+    readonly x: number;
+    readonly y: number;
     constructor(x: number, y: number) {
         this.x = x;
         this.y = y;
+    }
+    add(other : Coord) : Coord {
+        return new Coord(this.x + other.x, this.y + other.y);
     }
 }
 
-class Coord {
-    x: number;
-    y: number;
-    constructor(x: number, y: number) {
-        this.x = x;
-        this.y = y;
+const DOWN = new Coord(0,1);
+const LEFT = new Coord(-1,0);
+const RIGHT = new Coord(1,0);
+
+function createGamePieceFromTetro(t?: Tetros) : GamePiece {
+
+    let globalPos = new Coord(4, 0);
+    let colour;
+    let shape;
+    if(t === undefined) {
+        t = Math.floor(Math.random() * Math.floor(7) + 1);
     }
+    console.log(t);
+
+    if(t == 1) {
+        colour = "lightblue";
+        shape = [new Coord(0,0), new Coord(0,1),
+                    new Coord(0,2), new Coord(0,3)];
+    }
+    if(t == 2) {
+        colour = "yellow";
+        shape = [new Coord(0,0), new Coord(1,0),
+                    new Coord(1,1), new Coord(0,1)];
+    }
+    if(t == 3) {
+        colour = "pink";
+        shape = [new Coord(0,0), new Coord(1,0),
+                    new Coord(2,0), new Coord(1,1)];
+    }
+    if(t == 4) {
+        colour = "blue";
+        shape = [new Coord(0,0), new Coord(1,0),
+                    new Coord(2,0), new Coord(2,1)];
+    }
+    if(t == 5) {
+        colour = "orange";
+        shape = [new Coord(0,0), new Coord(1,0),
+                    new Coord(2,0), new Coord(0,1)];
+    }
+    if(t == 6) {
+        colour = "green";
+        shape = [new Coord(1,0), new Coord(2,0),
+                    new Coord(0,1), new Coord(1,1)];
+    }
+    if(t == 7) {
+        colour = "red";
+        shape = [new Coord(0,0), new Coord(1,0),
+                    new Coord(1,1), new Coord(2,1)];
+    }    
+    return new GamePiece(globalPos,shape,colour);
 }
 
 class GamePiece {
+    globalPos: Coord;
 	shape: Coord[];
 	colour: string;
 
-	constructor(t: Tetros) {
-        if(t == 1) {
-            this.colour = "lightblue";
-            this.shape = [new Coord(4,0), new Coord(4,1),
-                        new Coord(4,2), new Coord(4,3)];
-        }
-        if(t == 2) {
-            this.colour = "yellow";
-            this.shape = [new Coord(4,0), new Coord(5,0),
-                        new Coord(5,1), new Coord(4,1)];
-        }
-        if(t == 3) {
-            this.colour = "pink";
-            this.shape = [new Coord(4,0), new Coord(5,0),
-                        new Coord(6,0), new Coord(5,1)];
-        }
-        if(t == 4) {
-            this.colour = "blue";
-            this.shape = [new Coord(4,0), new Coord(5,0),
-                        new Coord(6,0), new Coord(6,1)];
-        }
-        if(t == 5) {
-            this.colour = "orange";
-            this.shape = [new Coord(4,0), new Coord(5,0),
-                        new Coord(6,0), new Coord(4,1)];
-        }
-        if(t == 6) {
-            this.colour = "green";
-            this.shape = [new Coord(4,0), new Coord(5,0),
-                        new Coord(3,1), new Coord(4,1)];
-        }
-        if(t == 7) {
-            this.colour = "red";
-            this.shape = [new Coord(4,0), new Coord(5,0),
-                        new Coord(5,1), new Coord(6,1)];
-        }
+	constructor(globalPos: Coord, shape: Coord[], colour: string) {       
+        this.globalPos = globalPos;
+        this.shape = shape;
+        this.colour = colour;
     }
 
-    move(direction: Direction) {
-        this.shape.forEach(function (el) {
-            el.x += direction.x;
-            el.y += direction.y;
-        });
+    move(direction: Coord) : GamePiece {
+
+        let newPiece = this.clone();
+        newPiece.globalPos.add(direction);
+        return newPiece;
+    }
+
+    clone() {
+        return new GamePiece(this.globalPos, this.shape, this.colour);
     }
     
     *absoluteCoords() : Iterable<Coord> {
         for(let el of this.shape) {
-            yield el;
+            yield el.add(this.globalPos);
         }
     }
 }
 
+//TODO add methods to return specific tile from Tiles[]
 class Board {
 	tiles: Tile[][];
 	gamePiece: GamePiece;
 
 	constructor() {
-		this.gamePiece = new GamePiece(7);
+		this.gamePiece = createGamePieceFromTetro();
 		this.tiles = [];
 
 		for(var i: number = 0; i < boardWidth; i++) {
@@ -152,24 +172,24 @@ function handleKeyPress(event, board: Board) {
 		case "Down": // IE/Edge specific value
 		case "ArrowDown":
 			// Do something for "down arrow" key press.
-            if(!collision(board, {x: 0, y: 1})) {
-                board.gamePiece.move({x: 0, y: 1});
+            if(!collision(board, DOWN)) {
+                board.gamePiece.move(DOWN);
                 draw = true;
             }
 			break;
 		case "Left": // IE/Edge specific value
 		case "ArrowLeft":
             // Do something for "left arrow" key press.
-            if(!collision(board, {x: -1, y: 0})) {
-                board.gamePiece.move({x: -1, y: 0});
+            if(!collision(board, LEFT)) {
+                board.gamePiece.move(LEFT);
                 draw = true;
             }
 			break;
 		case "Right": // IE/Edge specific value
 		case "ArrowRight":
 			// Do something for "right arrow" key press.
-            if(!collision(board, {x: 1, y: 0})) {
-                board.gamePiece.move({x: 1, y: 0});
+            if(!collision(board, RIGHT)) {
+                board.gamePiece.move(RIGHT);
                 draw = true;
             }
 			break;
@@ -195,10 +215,11 @@ function handleKeyPress(event, board: Board) {
 }
 
 //can we move there
-function collision(board: Board, direction: Direction) {
+function collision(board: Board, direction: Coord) {
 
     let collision = false;
 
+    //TODO change to new coord
     for(let coord of board.gamePiece.absoluteCoords()) {
         let newX = coord.x + direction.x;
         let newY = coord.y + direction.y;
@@ -221,7 +242,7 @@ function lockPiece(board: Board) {
         board.tiles[coord.x][coord.y].colour = board.gamePiece.colour;
     }
 
-    board.gamePiece = new GamePiece(7);
+    board.gamePiece = createGamePieceFromTetro();
     //TO DO - check if new piece spawning collides, game over?
 }
 
@@ -229,14 +250,14 @@ function tick(board: Board) {
 
     //if moving down would cause collision
     //then lock in piece 
-    if(collision(board, {x: 0, y: 1})) {
+    if(collision(board, DOWN)) {
         console.log("lock in piece");
         lockPiece(board);
         return;
     } else {
         //if no collision
         //move down 1
-        board.gamePiece.move({x: 0, y: 1});
+        board.gamePiece.move(DOWN);
     }
 
 
