@@ -88,7 +88,20 @@ class GamePiece {
             this.shape = [new Coord(4,0), new Coord(5,0),
                         new Coord(5,1), new Coord(6,1)];
         }
-	}
+    }
+
+    move(direction: Direction) {
+        this.shape.forEach(function (el) {
+            el.x += direction.x;
+            el.y += direction.y;
+        });
+    }
+    
+    *absoluteCoords() : Iterable<Coord> {
+        for(let el of this.shape) {
+            yield el;
+        }
+    }
 }
 
 class Board {
@@ -124,12 +137,12 @@ function drawBoard(board, ctx) {
 		});
 	});
 
-	//draw our game piece
-	board.gamePiece.shape.forEach(function(el, i) {
-		ctx.fillStyle = board.gamePiece.colour;
-		ctx.fillRect((el.x)*tileSize,(el.y)*tileSize, tileSize, tileSize);
-		ctx.strokeRect((el.x)*tileSize,(el.y)*tileSize, tileSize, tileSize);
-	});
+    //draw our game piece
+	ctx.fillStyle = board.gamePiece.colour;
+    for(let coord of board.gamePiece.absoluteCoords()) {
+		ctx.fillRect((coord.x)*tileSize,(coord.y)*tileSize, tileSize, tileSize);
+		ctx.strokeRect((coord.x)*tileSize,(coord.y)*tileSize, tileSize, tileSize);
+    }
 
 }
 
@@ -140,7 +153,7 @@ function handleKeyPress(event, board: Board) {
 		case "ArrowDown":
 			// Do something for "down arrow" key press.
             if(!collision(board, {x: 0, y: 1})) {
-                move(board.gamePiece, {x: 0, y: 1});
+                board.gamePiece.move({x: 0, y: 1});
                 draw = true;
             }
 			break;
@@ -148,7 +161,7 @@ function handleKeyPress(event, board: Board) {
 		case "ArrowLeft":
             // Do something for "left arrow" key press.
             if(!collision(board, {x: -1, y: 0})) {
-                move(board.gamePiece, {x: -1, y: 0});
+                board.gamePiece.move({x: -1, y: 0});
                 draw = true;
             }
 			break;
@@ -156,16 +169,13 @@ function handleKeyPress(event, board: Board) {
 		case "ArrowRight":
 			// Do something for "right arrow" key press.
             if(!collision(board, {x: 1, y: 0})) {
-                move(board.gamePiece, {x: 1, y: 0});
+                board.gamePiece.move({x: 1, y: 0});
                 draw = true;
             }
 			break;
 		case "z":
-			// Do something for "z"  key press. Rotate counterclockwise
-            if(!collision(board, {x: 1, y: 0})) {
-                move(board.gamePiece, {x: 1, y: 0});
-                draw = true;
-            }
+            // Do something for "z"  key press. Rotate counterclockwise
+            
 			break;
 		case "x":
 			// Do something for "x"  key press. Rotate clockwise
@@ -188,35 +198,31 @@ function handleKeyPress(event, board: Board) {
 function collision(board: Board, direction: Direction) {
 
     let collision = false;
-    board.gamePiece.shape.forEach(function (el) {
-        let newX = el.x + direction.x;
-        let newY = el.y + direction.y;
 
-        if(newX < 0 || newX >= boardWidth || newY > boardHeight) {
+    for(let coord of board.gamePiece.absoluteCoords()) {
+        let newX = coord.x + direction.x;
+        let newY = coord.y + direction.y;
+
+        console.log(newY);
+        if(newX < 0 || newX >= boardWidth || newY >= boardHeight) {
             collision = true;
         } else if(!board.tiles[newX][newY].isEmpty) {
             collision = true;
-        }
-    });
+        }       
+    }
+
     return collision;
 }
 
 function lockPiece(board: Board) {
-    board.gamePiece.shape.forEach(function (el) {
-        board.tiles[el.x][el.y].isEmpty = false;
-        board.tiles[el.x][el.y].colour = board.gamePiece.colour;
-    });
+
+    for(let coord of board.gamePiece.absoluteCoords()) {
+        board.tiles[coord.x][coord.y].isEmpty = false;
+        board.tiles[coord.x][coord.y].colour = board.gamePiece.colour;
+    }
+
     board.gamePiece = new GamePiece(7);
     //TO DO - check if new piece spawning collides, game over?
-}
-
-//move piece
-function move(piece: GamePiece, direction: Direction) {
-
-    piece.shape.forEach(function (el) {
-        el.x += direction.x;
-        el.y += direction.y;
-    });
 }
 
 function tick(board: Board) {
@@ -230,7 +236,7 @@ function tick(board: Board) {
     } else {
         //if no collision
         //move down 1
-        move(board.gamePiece, {x: 0, y: 1});
+        board.gamePiece.move({x: 0, y: 1});
     }
 
 
@@ -244,14 +250,14 @@ function main() {
 
     let board = new Board();
 
-    board.tiles[5][boardHeight-1].isEmpty = false;
-    board.tiles[5][boardHeight-1].colour = "blue";
+    board.tiles[4][boardHeight-1].isEmpty = false;
+    board.tiles[4][boardHeight-1].colour = "blue";
     drawBoard(board, ctx);
 
     window.setInterval(() => {
         tick(board);
         drawBoard(board, ctx);
-    }, 1000);
+    }, 400);
 
     console.log(canvas);
     document.addEventListener("keydown", function(event) {
