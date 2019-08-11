@@ -11,11 +11,11 @@ let canvasWidth = boardWidth*tileSize;
 let canvasHeight = boardHeight*tileSize;
 
 class Tile {
-	isEmpty: boolean;
+	empty: boolean;
 	colour: string;
 
 	constructor() {
-		this.isEmpty = true;
+		this.empty = true;
 		this.colour = "grey";
 	}
 }
@@ -45,6 +45,11 @@ class Coord {
 const DOWN = new Coord(0,1);
 const LEFT = new Coord(-1,0);
 const RIGHT = new Coord(1,0);
+
+enum Rotate {
+    Clockwise,
+    Counterclockwise,
+}
 
 function createGamePieceFromTetro(t?: Tetros) : GamePiece {
 
@@ -108,7 +113,10 @@ class GamePiece {
     move(direction: Coord) : GamePiece {
 
         let newPiece = this.clone();
-        newPiece.globalPos.add(direction);
+        console.log(newPiece);
+        newPiece.globalPos = newPiece.globalPos.add(direction);
+        console.log(newPiece);
+        console.log("moving");
         return newPiece;
     }
 
@@ -123,7 +131,6 @@ class GamePiece {
     }
 }
 
-//TODO add methods to return specific tile from Tiles[]
 class Board {
 	tiles: Tile[][];
 	gamePiece: GamePiece;
@@ -138,7 +145,11 @@ class Board {
 				this.tiles[i][j] = new Tile();
 			}
 		}
-	}
+    }
+    
+    getTile(x: number, y: number) : Tile {
+        return this.tiles[x][y];
+    }
 }
 
 function drawBoard(board, ctx) {
@@ -150,8 +161,7 @@ function drawBoard(board, ctx) {
 	ctx.strokeStyle = 'black';
 	board.tiles.forEach(function(row, i) {
 		row.forEach(function(el, j) {
-			ctx.fillStyle = board.tiles[i][j].colour;
-
+			ctx.fillStyle = board.getTile(i,j).colour;
 			ctx.fillRect(i*tileSize, j*tileSize, tileSize, tileSize);
 			ctx.strokeRect(i*tileSize, j*tileSize, tileSize, tileSize);
 		});
@@ -172,24 +182,24 @@ function handleKeyPress(event, board: Board) {
 		case "Down": // IE/Edge specific value
 		case "ArrowDown":
 			// Do something for "down arrow" key press.
-            if(!collision(board, DOWN)) {
-                board.gamePiece.move(DOWN);
+            if(!collision(board, board.gamePiece.move(DOWN))) {
+                board.gamePiece = board.gamePiece.move(DOWN);
                 draw = true;
             }
 			break;
 		case "Left": // IE/Edge specific value
 		case "ArrowLeft":
             // Do something for "left arrow" key press.
-            if(!collision(board, LEFT)) {
-                board.gamePiece.move(LEFT);
+            if(!collision(board, board.gamePiece.move(LEFT))) {
+                board.gamePiece = board.gamePiece.move(LEFT);
                 draw = true;
             }
 			break;
 		case "Right": // IE/Edge specific value
 		case "ArrowRight":
 			// Do something for "right arrow" key press.
-            if(!collision(board, RIGHT)) {
-                board.gamePiece.move(RIGHT);
+            if(!collision(board, board.gamePiece.move(RIGHT))) {
+                board.gamePiece = board.gamePiece.move(RIGHT);
                 draw = true;
             }
 			break;
@@ -215,19 +225,15 @@ function handleKeyPress(event, board: Board) {
 }
 
 //can we move there
-function collision(board: Board, direction: Coord) {
+function collision(board: Board, newPiece: GamePiece) {
 
     let collision = false;
 
-    //TODO change to new coord
-    for(let coord of board.gamePiece.absoluteCoords()) {
-        let newX = coord.x + direction.x;
-        let newY = coord.y + direction.y;
-
-        console.log(newY);
-        if(newX < 0 || newX >= boardWidth || newY >= boardHeight) {
+    for(let coord of newPiece.absoluteCoords()) {
+        if(coord.x < 0 || coord.x >= boardWidth || coord.y >= boardHeight) {
+            console.log("collision");
             collision = true;
-        } else if(!board.tiles[newX][newY].isEmpty) {
+        } else if(!board.getTile(coord.x,coord.y).empty) {
             collision = true;
         }       
     }
@@ -235,29 +241,50 @@ function collision(board: Board, direction: Coord) {
     return collision;
 }
 
+function checkFullRows(board: Board) {
+    let rowFull = false;
+ 
+    for(let coord of board.gamePiece.absoluteCoords()) {
+        let rowNumber = coord.y;
+        //TO DO check each row changed by our pieceeto see if full now
+    }
+    
+}
+
 function lockPiece(board: Board) {
 
     for(let coord of board.gamePiece.absoluteCoords()) {
-        board.tiles[coord.x][coord.y].isEmpty = false;
+        board.tiles[coord.x][coord.y].empty = false;
         board.tiles[coord.x][coord.y].colour = board.gamePiece.colour;
     }
+}
 
-    board.gamePiece = createGamePieceFromTetro();
-    //TO DO - check if new piece spawning collides, game over?
+function gameOver() {
+    window.clearInterval();
 }
 
 function tick(board: Board) {
 
     //if moving down would cause collision
     //then lock in piece 
-    if(collision(board, DOWN)) {
+    if(collision(board, board.gamePiece.move(DOWN))) {
         console.log("lock in piece");
         lockPiece(board);
+        checkFullRows(board);
+
+        let newPiece = createGamePieceFromTetro();
+        if(collision(board, newPiece)) {
+            console.log("game over");
+            gameOver();
+        } else {
+            board.gamePiece = createGamePieceFromTetro();
+        }
+
         return;
     } else {
         //if no collision
         //move down 1
-        board.gamePiece.move(DOWN);
+        board.gamePiece = board.gamePiece.move(DOWN);
     }
 
 
@@ -271,8 +298,11 @@ function main() {
 
     let board = new Board();
 
-    board.tiles[4][boardHeight-1].isEmpty = false;
+    //test block
+    board.tiles[4][boardHeight-1].empty = false;
     board.tiles[4][boardHeight-1].colour = "blue";
+
+
     drawBoard(board, ctx);
 
     window.setInterval(() => {
