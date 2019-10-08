@@ -10,6 +10,8 @@ let tilePadding = 5;
 let canvasWidth = boardWidth*tileSize;
 let canvasHeight = boardHeight*tileSize;
 
+let intervalID: number;
+
 class Tile {
 	empty: boolean;
 	colour: string;
@@ -132,40 +134,59 @@ class GamePiece {
 }
 
 class Board {
-	tiles: Tile[][];
-	gamePiece: GamePiece;
+	private tiles: Tile[][];
+    gamePiece: GamePiece;
+    score: number;
 
 	constructor() {
 		this.gamePiece = createGamePieceFromTetro();
-		this.tiles = [];
+        this.tiles = [];
+        this.score = 0;
 
-		for(var i: number = 0; i < boardWidth; i++) {
+		for(var i: number = 0; i < boardHeight; i++) {
 			this.tiles[i] = [];
-			for(var j: number = 0; j< boardHeight; j++) {
+			for(var j: number = 0; j< boardWidth; j++) {
 				this.tiles[i][j] = new Tile();
 			}
 		}
     }
     
-    getTile(x: number, y: number) : Tile {
-        return this.tiles[x][y];
+    getTile(coord: Coord) : Tile {
+        return this.tiles[coord.y][coord.x];
     }
-}
 
-function drawBoard(board, ctx) {
 
+    lockPiece() {
+        for(let coord of this.gamePiece.absoluteCoords()) {
+            this.getTile(coord).empty = false;
+            this.getTile(coord).colour = this.gamePiece.colour;
+        }
+    }
+
+    clearFullRows() {
+        
+    }
+
+    *coords() : Iterable<Coord> {
+        for(var i: number = 0; i < boardHeight; i++) {
+			for(var j: number = 0; j< boardWidth; j++) {
+				yield new Coord(j,i);
+			}
+		}       
+    }
+} 
+
+function drawBoard(board: Board, ctx: CanvasRenderingContext2D) {
 	console.log("drawing board");
 
 	//draw all tiles
 	ctx.lineWidth = 2;
-	ctx.strokeStyle = 'black';
-	board.tiles.forEach(function(row, i) {
-		row.forEach(function(el, j) {
-			ctx.fillStyle = board.getTile(i,j).colour;
-			ctx.fillRect(i*tileSize, j*tileSize, tileSize, tileSize);
-			ctx.strokeRect(i*tileSize, j*tileSize, tileSize, tileSize);
-		});
-	});
+    ctx.strokeStyle = 'black';
+    for(let coord of board.coords()) {
+        ctx.fillStyle = board.getTile(coord).colour;
+		ctx.fillRect((coord.x)*tileSize,(coord.y)*tileSize, tileSize, tileSize);
+		ctx.strokeRect((coord.x)*tileSize,(coord.y)*tileSize, tileSize, tileSize);
+    }
 
     //draw our game piece
 	ctx.fillStyle = board.gamePiece.colour;
@@ -176,7 +197,7 @@ function drawBoard(board, ctx) {
 
 }
 
-function handleKeyPress(event, board: Board) {
+function handleKeyPress(event: KeyboardEvent, board: Board) {
     let draw = false;
 	switch (event.key) {
 		case "Down": // IE/Edge specific value
@@ -233,7 +254,7 @@ function collision(board: Board, newPiece: GamePiece) {
         if(coord.x < 0 || coord.x >= boardWidth || coord.y >= boardHeight) {
             console.log("collision");
             collision = true;
-        } else if(!board.getTile(coord.x,coord.y).empty) {
+        } else if(!board.getTile(coord).empty) {
             collision = true;
         }       
     }
@@ -241,26 +262,10 @@ function collision(board: Board, newPiece: GamePiece) {
     return collision;
 }
 
-function checkFullRows(board: Board) {
-    let rowFull = false;
- 
-    for(let coord of board.gamePiece.absoluteCoords()) {
-        let rowNumber = coord.y;
-        //TO DO check each row changed by our pieceeto see if full now
-    }
-    
-}
-
-function lockPiece(board: Board) {
-
-    for(let coord of board.gamePiece.absoluteCoords()) {
-        board.tiles[coord.x][coord.y].empty = false;
-        board.tiles[coord.x][coord.y].colour = board.gamePiece.colour;
-    }
-}
 
 function gameOver() {
-    window.clearInterval();
+    window.clearInterval(intervalID);
+    main();
 }
 
 function tick(board: Board) {
@@ -269,8 +274,8 @@ function tick(board: Board) {
     //then lock in piece 
     if(collision(board, board.gamePiece.move(DOWN))) {
         console.log("lock in piece");
-        lockPiece(board);
-        checkFullRows(board);
+        board.lockPiece();
+        board.clearFullRows();
 
         let newPiece = createGamePieceFromTetro();
         if(collision(board, newPiece)) {
@@ -291,27 +296,23 @@ function tick(board: Board) {
 }
 
 function main() {
-    const canvas : any = document.querySelector('#board');
+    const canvas: HTMLCanvasElement = document.querySelector('#board');
 	const ctx = canvas.getContext('2d');
 	canvas.width = boardWidth*tileSize + 100;
 	canvas.height = boardHeight*tileSize + 100;
 
     let board = new Board();
 
-    //test block
-    board.tiles[4][boardHeight-1].empty = false;
-    board.tiles[4][boardHeight-1].colour = "blue";
-
 
     drawBoard(board, ctx);
 
-    window.setInterval(() => {
+    intervalID = window.setInterval(() => {
         tick(board);
         drawBoard(board, ctx);
     }, 400);
 
     console.log(canvas);
-    document.addEventListener("keydown", function(event) {
+    document.addEventListener("keydown", function(event: KeyboardEvent) {
         let draw = handleKeyPress(event, board);
         if(draw) {
             drawBoard(board, ctx);
