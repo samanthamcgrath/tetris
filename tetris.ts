@@ -1,7 +1,7 @@
 
 // board size in tiles
 let boardWidth = 10;
-let boardHeight = 20;
+let boardHeight = 10;
 
 // tile width and height in pixels
 let tileSize = 30;
@@ -16,9 +16,14 @@ class Tile {
 	empty: boolean;
 	colour: string;
 
-	constructor() {
-		this.empty = true;
-		this.colour = "grey";
+	constructor(colour? : string) {
+        if(colour === undefined) {
+            this.empty = true;
+            this.colour = "grey";
+        } else {
+            this.empty = false;
+            this.colour = colour;
+        }
 	}
 }
 
@@ -61,7 +66,9 @@ function createGamePieceFromTetro(t?: Tetros) : GamePiece {
     if(t === undefined) {
         t = Math.floor(Math.random() * Math.floor(7) + 1);
     }
-    console.log(t);
+    //testing
+    t = 2;
+    //console.log(t);
 
     if(t == 1) {
         colour = "lightblue";
@@ -115,10 +122,10 @@ class GamePiece {
     move(direction: Coord) : GamePiece {
 
         let newPiece = this.clone();
-        console.log(newPiece);
+        //console.log(newPiece);
         newPiece.globalPos = newPiece.globalPos.add(direction);
-        console.log(newPiece);
-        console.log("moving");
+        //console.log(newPiece);
+        //console.log("moving");
         return newPiece;
     }
 
@@ -163,8 +170,50 @@ class Board {
         }
     }
 
+
+
+    populateBoard(testBoard: String[]) {
+        testBoard.forEach((str, index) => {
+            console.log(str);
+            for(let i = 0; i <str.length; i++) {
+                if(str[i] == "#") {
+                    this.tiles[index][i] = new Tile("red");
+                }
+            }
+        });
+    }
+
     clearFullRows() {
-        
+        let fullRows = 0;
+        for(var i: number = boardHeight - 1; i >= 0; i--) {
+            let rowFull = true;
+
+            if(i - fullRows < 0) {
+                this.tiles[i] = [];
+                for(var j: number = 0; j< boardWidth; j++) {
+                    this.tiles[i][j] = new Tile();
+                }
+            } else {
+                this.tiles[i] = this.tiles[i - fullRows];
+            }
+
+			for(var j: number = 0; j< boardWidth; j++) {
+                
+                //console.log("i:" + i + ", j:" + j);
+				if(this.tiles[i][j].empty) {
+                    rowFull = false;
+                }
+            }
+
+            if(rowFull) {
+                fullRows++;
+                //console.log("row " + i + "is full");
+                this.tiles[i] = this.tiles[i - 1];
+                i = i + 1;
+            }
+
+        }   
+        //console.log("found full rows: " + fullRows);    
     }
 
     *coords() : Iterable<Coord> {
@@ -295,6 +344,21 @@ function tick(board: Board) {
 
 }
 
+function testRowClearing(board: Board) {
+    board.populateBoard(
+        ["..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        ".#.#.#...."]
+     );
+}
+
 function main() {
     const canvas: HTMLCanvasElement = document.querySelector('#board');
 	const ctx = canvas.getContext('2d');
@@ -304,6 +368,7 @@ function main() {
     let board = new Board();
 
 
+
     drawBoard(board, ctx);
 
     intervalID = window.setInterval(() => {
@@ -311,7 +376,7 @@ function main() {
         drawBoard(board, ctx);
     }, 400);
 
-    console.log(canvas);
+    //console.log(canvas);
     document.addEventListener("keydown", function(event: KeyboardEvent) {
         let draw = handleKeyPress(event, board);
         if(draw) {
