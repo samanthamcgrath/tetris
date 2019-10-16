@@ -170,11 +170,26 @@ class Board {
         }
     }
 
-
+    convertToString() : String[] {
+        let board: String[] = [];
+		for(let i: number = 0; i < boardHeight; i++) {
+			let rowString = "";
+			for(let j: number = 0; j< boardWidth; j++) {
+                if (this.tiles[i][j].empty) {
+                    rowString += ".";
+                } else {
+                    rowString += "#";
+                }
+            }
+            //console.log("row string is " + rowString);
+            board.push(rowString);
+        }
+        return board;
+    }
 
     populateBoard(testBoard: String[]) {
         testBoard.forEach((str, index) => {
-            console.log(str);
+            //console.log(str);
             for(let i = 0; i <str.length; i++) {
                 if(str[i] == "#") {
                     this.tiles[index][i] = new Tile("red");
@@ -344,19 +359,80 @@ function tick(board: Board) {
 
 }
 
+function compareBoards(board1: String[], board2: String[]) : boolean {
+    for(let i = 0; i < board1.length; i++) {
+        if(board1[i] != board2[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function assert(bool : boolean) {
+    if(!bool) {
+        throw "test failed";
+    }
+}
+
 function testRowClearing(board: Board) {
-    board.populateBoard(
-        ["..........",
+    let testBoard = 
+    ["..........",
+    "..........",
+    "..........",
+    "..........",
+    "..........",
+    "..........",
+    "..........",
+    "##########",
+    ".#.#.#....",
+    "##########"];
+    board.populateBoard(testBoard);
+    board.clearFullRows();
+    let resultBoard = board.convertToString();
+
+    assert(compareBoards(resultBoard,
+    ["..........",
+    "..........",
+    "..........",
+    "..........",
+    "..........",
+    "..........",
+    "..........",
+    "..........",
+    "..........",
+    ".#.#.#...."]));
+
+    let testBoard2 = [
+        "##########",
+        "##########",
+        "...#......",
+        "##########",
+        "##########",
+        "##########",
+        "..........",
+        "###.######",
+        ".#.#.#....",
+        "##########",
+    ];
+    board.populateBoard(testBoard2);
+    board.clearFullRows();
+    let resultBoard2 = board.convertToString();
+    console.log(resultBoard2);
+    assert(compareBoards(resultBoard2,[
         "..........",
         "..........",
         "..........",
         "..........",
         "..........",
         "..........",
+        "...#......",
         "..........",
-        "..........",
-        ".#.#.#...."]
-     );
+        "###.######",
+        ".#.#.#....",
+    ]));
+    
+    //console.log("resulting board:");
+    //console.log(resultBoard);
 }
 
 function main() {
@@ -368,7 +444,7 @@ function main() {
     let board = new Board();
 
 
-
+    testRowClearing(board);
     drawBoard(board, ctx);
 
     intervalID = window.setInterval(() => {
