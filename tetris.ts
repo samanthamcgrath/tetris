@@ -1,11 +1,11 @@
 
 // board size in tiles
 let boardWidth = 10;
-let boardHeight = 10;
+let boardHeight = 20;
 
 // tile width and height in pixels
-let tileSize = 30;
-let tilePadding = 5;
+let tileSize = 20;
+let tilePadding = 4;
 
 let canvasWidth = boardWidth*tileSize;
 let canvasHeight = boardHeight*tileSize;
@@ -47,6 +47,9 @@ class Coord {
     add(other : Coord) : Coord {
         return new Coord(this.x + other.x, this.y + other.y);
     }
+    subtract(other : Coord) : Coord {
+        return new Coord(this.x - other.x, this.y - other.y);
+    }
 }
 
 const DOWN = new Coord(0,1);
@@ -63,60 +66,73 @@ function createGamePieceFromTetro(t?: Tetros) : GamePiece {
     let globalPos = new Coord(4, 0);
     let colour;
     let shape;
+    let rotationPoint;
     if(t === undefined) {
-        t = Math.floor(Math.random() * Math.floor(7) + 1);
+        t = Math.floor(Math.random() * Math.floor(7));
     }
     //testing
-    t = 2;
+    //t = 1;
     //console.log(t);
 
-    if(t == 1) {
+    if(t == Tetros.I) {
         colour = "lightblue";
-        shape = [new Coord(0,0), new Coord(0,1),
-                    new Coord(0,2), new Coord(0,3)];
-    }
-    if(t == 2) {
+        shape = [new Coord(1,0), new Coord(1,1),
+                    new Coord(1,2), new Coord(1,3)];
+        rotationPoint = new Coord(1.5,1.5);
+    } 
+    else if(t == Tetros.O) {
         colour = "yellow";
         shape = [new Coord(0,0), new Coord(1,0),
-                    new Coord(1,1), new Coord(0,1)];
+                    new Coord(0,1), new Coord(1,1)];
+        rotationPoint = new Coord(0.5,0.5);
     }
-    if(t == 3) {
+    else if(t == Tetros.T) {
         colour = "pink";
-        shape = [new Coord(0,0), new Coord(1,0),
-                    new Coord(2,0), new Coord(1,1)];
+        shape = [new Coord(0,1), new Coord(1,1),
+                    new Coord(2,1), new Coord(1,2)];
+        rotationPoint = new Coord(1,1);
     }
-    if(t == 4) {
+    else if(t == Tetros.J) {
         colour = "blue";
-        shape = [new Coord(0,0), new Coord(1,0),
-                    new Coord(2,0), new Coord(2,1)];
+        shape = [new Coord(0,1), new Coord(1,1),
+                    new Coord(2,1), new Coord(2,0)];
+        rotationPoint = new Coord(1,1);
     }
-    if(t == 5) {
+    else if(t == Tetros.L) {
         colour = "orange";
-        shape = [new Coord(0,0), new Coord(1,0),
-                    new Coord(2,0), new Coord(0,1)];
+        shape = [new Coord(0,1), new Coord(1,1),
+                    new Coord(2,1), new Coord(2,2)];
+        rotationPoint = new Coord(1,1);
     }
-    if(t == 6) {
+    else if(t == Tetros.S) {
         colour = "green";
         shape = [new Coord(1,0), new Coord(2,0),
                     new Coord(0,1), new Coord(1,1)];
+        rotationPoint = new Coord(1,1);
     }
-    if(t == 7) {
+    else if(t == Tetros.Z) {
         colour = "red";
         shape = [new Coord(0,0), new Coord(1,0),
                     new Coord(1,1), new Coord(2,1)];
-    }    
-    return new GamePiece(globalPos,shape,colour);
+        rotationPoint = new Coord(1,1);
+    }
+    else {
+        throw "game piece undefined";
+    }
+    return new GamePiece(globalPos,shape,colour,rotationPoint);
 }
 
 class GamePiece {
     globalPos: Coord;
 	shape: Coord[];
-	colour: string;
+    colour: string;
+    rotationPoint: Coord;
 
-	constructor(globalPos: Coord, shape: Coord[], colour: string) {       
+	constructor(globalPos: Coord, shape: Coord[], colour: string, rotationPoint: Coord) {       
         this.globalPos = globalPos;
         this.shape = shape;
         this.colour = colour;
+        this.rotationPoint = rotationPoint;
     }
 
     move(direction: Coord) : GamePiece {
@@ -129,8 +145,27 @@ class GamePiece {
         return newPiece;
     }
 
+    rotate(direction: Rotate) : GamePiece {
+        console.log("rotating");
+        let newPiece = this.clone();
+
+        newPiece.shape = this.shape.map(element => {
+            //console.log(element);
+            let newCoord = element.subtract(this.rotationPoint);
+            if(direction === Rotate.Clockwise) {
+                newCoord = new Coord(-newCoord.y,newCoord.x);
+            } else {
+                newCoord = new Coord(newCoord.y,-newCoord.x);
+            }
+            newCoord = newCoord.add(this.rotationPoint);
+            //console.log(newCoord);
+            return newCoord;
+        });
+        return newPiece;
+    }
+
     clone() {
-        return new GamePiece(this.globalPos, this.shape, this.colour);
+        return new GamePiece(this.globalPos, this.shape, this.colour, this.rotationPoint);
     }
     
     *absoluteCoords() : Iterable<Coord> {
@@ -252,6 +287,7 @@ function drawBoard(board: Board, ctx: CanvasRenderingContext2D) {
 		ctx.strokeRect((coord.x)*tileSize,(coord.y)*tileSize, tileSize, tileSize);
     }
 
+    console.log(board.gamePiece);
     //draw our game piece
 	ctx.fillStyle = board.gamePiece.colour;
     for(let coord of board.gamePiece.absoluteCoords()) {
@@ -290,10 +326,14 @@ function handleKeyPress(event: KeyboardEvent, board: Board) {
 			break;
 		case "z":
             // Do something for "z"  key press. Rotate counterclockwise
-            
+            board.gamePiece = board.gamePiece.rotate(Rotate.Counterclockwise);
+            draw = true;
+            console.log(board.gamePiece.shape);
 			break;
 		case "x":
-			// Do something for "x"  key press. Rotate clockwise
+            // Do something for "x"  key press. Rotate clockwise
+            board.gamePiece = board.gamePiece.rotate(Rotate.Clockwise);
+            draw = true;
 			break;
 		case "Space":
 			// Do something for "space"  key press.
@@ -346,7 +386,7 @@ function tick(board: Board) {
             console.log("game over");
             gameOver();
         } else {
-            board.gamePiece = createGamePieceFromTetro();
+            board.gamePiece = newPiece;
         }
 
         return;
@@ -375,34 +415,66 @@ function assert(bool : boolean) {
 }
 
 function testRowClearing(board: Board) {
-    let testBoard = 
-    ["..........",
-    "..........",
-    "..........",
-    "..........",
-    "..........",
-    "..........",
-    "..........",
-    "##########",
-    ".#.#.#....",
-    "##########"];
+    let testBoard = [
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "##########",
+        ".#.#.#....",
+        "##########",
+    ];
     board.populateBoard(testBoard);
     board.clearFullRows();
     let resultBoard = board.convertToString();
 
-    assert(compareBoards(resultBoard,
-    ["..........",
-    "..........",
-    "..........",
-    "..........",
-    "..........",
-    "..........",
-    "..........",
-    "..........",
-    "..........",
-    ".#.#.#...."]));
+    assert(compareBoards(resultBoard, [
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        ".#.#.#....",
+    ]));
 
     let testBoard2 = [
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
         "##########",
         "##########",
         "...#......",
@@ -417,8 +489,18 @@ function testRowClearing(board: Board) {
     board.populateBoard(testBoard2);
     board.clearFullRows();
     let resultBoard2 = board.convertToString();
-    console.log(resultBoard2);
+    //console.log(resultBoard2);
     assert(compareBoards(resultBoard2,[
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
+        "..........",
         "..........",
         "..........",
         "..........",
@@ -431,8 +513,7 @@ function testRowClearing(board: Board) {
         ".#.#.#....",
     ]));
     
-    //console.log("resulting board:");
-    //console.log(resultBoard);
+
 }
 
 function main() {
