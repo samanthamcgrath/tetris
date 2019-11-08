@@ -185,12 +185,14 @@ class Board {
     gamePiece: GamePiece;
     nextPiece: GamePiece;
     score: number;
+    tetris: boolean;
 
 	constructor() {
         this.gamePiece = createGamePieceFromTetro();
         this.nextPiece = createGamePieceFromTetro();
         this.tiles = [];
         this.score = 0;
+        this.tetris = false;
 
 		for(var i: number = 0; i < boardHeight; i++) {
 			this.tiles[i] = [];
@@ -270,7 +272,19 @@ class Board {
             }
 
         }   
-        //console.log("found full rows: " + fullRows);    
+        //console.log("found full rows: " + fullRows);   
+        if(fullRows === 4) {
+            if(this.tetris) {
+                this.score = this.score + 1200;
+            } else {
+                this.tetris = true;
+                this.score = this.score + 800;
+            }
+        } else if (fullRows > 0) {
+            this.tetris = false;
+            this.score = this.score + 100*fullRows;
+        }
+        
     }
 
     *coords() : Iterable<Coord> {
@@ -307,15 +321,21 @@ function drawBoard(board: Board, ctx: CanvasRenderingContext2D) {
 
     //draw next Piece
     ctx.font = '24px serif';
-    ctx.fillStyle = board.nextPiece.colour;
-    //ctx.fillText('Next piece', nextCanvasX, nextCanvasY, nextTextWidth);
-    ctx.strokeText('Next piece', nextCanvasX, nextCanvasY, nextTextWidth);
+    ctx.fillStyle = 'black';
+    ctx.fillText('Next piece', nextCanvasX, nextCanvasY, nextTextWidth);
+    //ctx.strokeText('Next piece', nextCanvasX, nextCanvasY, nextTextWidth);
     ctx.fillStyle = board.nextPiece.colour;
     ctx.strokeStyle = 'white';
     for(let coord of board.nextPiece.absoluteCoords()) {
 		ctx.fillRect(nextCanvasX+(coord.x)*tileSize,nextCanvasY*2+(coord.y)*tileSize, tileSize, tileSize);
 		ctx.strokeRect(nextCanvasX+(coord.x)*tileSize,nextCanvasY*2+(coord.y)*tileSize, tileSize, tileSize);
     }
+
+    // draw score
+    ctx.fillStyle = 'black';
+    ctx.fillText('Score', nextCanvasX, nextCanvasY+100, nextTextWidth);
+    ctx.fillText("" + board.score, nextCanvasX, nextCanvasY+150, nextTextWidth);
+   
 
 
 }
@@ -549,7 +569,7 @@ function main() {
     let board = new Board();
 
 
-    testRowClearing(board);
+    //testRowClearing(board);
     drawBoard(board, ctx);
 
     intervalID = window.setInterval(() => {
