@@ -7,7 +7,12 @@ let boardHeight = 20;
 let tileSize = 20;
 let tilePadding = 4;
 
-let canvasWidth = boardWidth*tileSize;
+// next piece canvas box
+let nextCanvasX = boardWidth*tileSize + 20;
+let nextCanvasY = 20;
+let nextTextWidth = 100;
+
+let canvasWidth = boardWidth*tileSize*2;
 let canvasHeight = boardHeight*tileSize;
 
 let intervalID: number;
@@ -19,7 +24,7 @@ class Tile {
 	constructor(colour? : string) {
         if(colour === undefined) {
             this.empty = true;
-            this.colour = "grey";
+            this.colour = "lightgrey";
         } else {
             this.empty = false;
             this.colour = colour;
@@ -178,10 +183,12 @@ class GamePiece {
 class Board {
 	private tiles: Tile[][];
     gamePiece: GamePiece;
+    nextPiece: GamePiece;
     score: number;
 
 	constructor() {
-		this.gamePiece = createGamePieceFromTetro();
+        this.gamePiece = createGamePieceFromTetro();
+        this.nextPiece = createGamePieceFromTetro();
         this.tiles = [];
         this.score = 0;
 
@@ -278,13 +285,16 @@ class Board {
 function drawBoard(board: Board, ctx: CanvasRenderingContext2D) {
 	console.log("drawing board");
 
+    //clear the board
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
 	//draw all tiles
 	ctx.lineWidth = 2;
-    ctx.strokeStyle = 'black';
+    ctx.strokeStyle = 'lightgrey';
     for(let coord of board.coords()) {
         ctx.fillStyle = board.getTile(coord).colour;
 		ctx.fillRect((coord.x)*tileSize,(coord.y)*tileSize, tileSize, tileSize);
-		ctx.strokeRect((coord.x)*tileSize,(coord.y)*tileSize, tileSize, tileSize);
+		//ctx.strokeRect((coord.x)*tileSize,(coord.y)*tileSize, tileSize, tileSize);
     }
 
     console.log(board.gamePiece);
@@ -294,6 +304,19 @@ function drawBoard(board: Board, ctx: CanvasRenderingContext2D) {
 		ctx.fillRect((coord.x)*tileSize,(coord.y)*tileSize, tileSize, tileSize);
 		ctx.strokeRect((coord.x)*tileSize,(coord.y)*tileSize, tileSize, tileSize);
     }
+
+    //draw next Piece
+    ctx.font = '24px serif';
+    ctx.fillStyle = board.nextPiece.colour;
+    //ctx.fillText('Next piece', nextCanvasX, nextCanvasY, nextTextWidth);
+    ctx.strokeText('Next piece', nextCanvasX, nextCanvasY, nextTextWidth);
+    ctx.fillStyle = board.nextPiece.colour;
+    ctx.strokeStyle = 'white';
+    for(let coord of board.nextPiece.absoluteCoords()) {
+		ctx.fillRect(nextCanvasX+(coord.x)*tileSize,nextCanvasY*2+(coord.y)*tileSize, tileSize, tileSize);
+		ctx.strokeRect(nextCanvasX+(coord.x)*tileSize,nextCanvasY*2+(coord.y)*tileSize, tileSize, tileSize);
+    }
+
 
 }
 
@@ -381,12 +404,13 @@ function tick(board: Board) {
         board.lockPiece();
         board.clearFullRows();
 
-        let newPiece = createGamePieceFromTetro();
+        let newPiece = board.nextPiece;
         if(collision(board, newPiece)) {
             console.log("game over");
             gameOver();
         } else {
             board.gamePiece = newPiece;
+            board.nextPiece = createGamePieceFromTetro();
         }
 
         return;
@@ -519,8 +543,8 @@ function testRowClearing(board: Board) {
 function main() {
     const canvas: HTMLCanvasElement = document.querySelector('#board');
 	const ctx = canvas.getContext('2d');
-	canvas.width = boardWidth*tileSize + 100;
-	canvas.height = boardHeight*tileSize + 100;
+	canvas.width = canvasWidth;
+	canvas.height = canvasHeight;
 
     let board = new Board();
 
