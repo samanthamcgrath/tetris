@@ -83,10 +83,7 @@ class GamePiece {
     move(direction: Coord) : GamePiece {
 
         let newPiece = this.clone();
-        //console.log(newPiece);
         newPiece.globalPos = newPiece.globalPos.add(direction);
-        //console.log(newPiece);
-        //console.log("moving");
         return newPiece;
     }
 
@@ -95,7 +92,6 @@ class GamePiece {
         let newPiece = this.clone();
 
         newPiece.shape = this.shape.map(element => {
-            //console.log(element);
             let newCoord = element.subtract(this.rotationPoint);
             if(direction === Rotate.Clockwise) {
                 newCoord = new Coord(-newCoord.y,newCoord.x);
@@ -103,7 +99,6 @@ class GamePiece {
                 newCoord = new Coord(newCoord.y,-newCoord.x);
             }
             newCoord = newCoord.add(this.rotationPoint);
-            //console.log(newCoord);
             return newCoord;
         });
         return newPiece;
@@ -131,7 +126,6 @@ function createGamePieceFromTetro(t?: Tetros) : GamePiece {
     }
     //testing
     //t = 1;
-    //console.log(t);
 
     if(t == Tetros.I) {
         colour = "lightblue";
@@ -228,7 +222,6 @@ class Board {
                     rowString += "#";
                 }
             }
-            //console.log("row string is " + rowString);
             board.push(rowString);
         }
         return board;
@@ -236,7 +229,6 @@ class Board {
 
     populateBoard(testBoard: String[]) {
         testBoard.forEach((str, index) => {
-            //console.log(str);
             for(let i = 0; i <str.length; i++) {
                 if(str[i] == "#") {
                     this.tiles[index][i] = new Tile("red");
@@ -261,7 +253,6 @@ class Board {
 
 			for(var j: number = 0; j< boardWidth; j++) {
                 
-                //console.log("i:" + i + ", j:" + j);
 				if(this.tiles[i][j].empty) {
                     rowFull = false;
                 }
@@ -269,13 +260,11 @@ class Board {
 
             if(rowFull) {
                 fullRows++;
-                //console.log("row " + i + "is full");
                 this.tiles[i] = this.tiles[i - 1];
                 i = i + 1;
             }
 
         }   
-        //console.log("found full rows: " + fullRows);   
         if(fullRows === 4) {
             if(this.tetris) {
                 this.score = this.score + 1200;
@@ -314,7 +303,6 @@ function drawBoard(board: Board, ctx: CanvasRenderingContext2D) {
 		//ctx.strokeRect((coord.x)*tileSize,(coord.y)*tileSize, tileSize, tileSize);
     }
 
-    console.log(board.gamePiece);
     //draw our game piece
 	ctx.fillStyle = board.gamePiece.colour;
     for(let coord of board.gamePiece.absoluteCoords()) {
@@ -322,7 +310,7 @@ function drawBoard(board: Board, ctx: CanvasRenderingContext2D) {
 		ctx.strokeRect((coord.x)*tileSize,(coord.y)*tileSize, tileSize, tileSize);
     }
 
-    //draw next Piece
+    //draw preview of next piece
     ctx.font = '24px serif';
     ctx.fillStyle = 'black';
     ctx.fillText('Next piece', nextCanvasX, nextCanvasY, nextTextWidth);
@@ -348,7 +336,6 @@ function handleKeyPress(event: KeyboardEvent, board: Board) {
 	switch (event.key) {
 		case "Down": // IE/Edge specific value
 		case "ArrowDown":
-			// Do something for "down arrow" key press.
             if(!collision(board, board.gamePiece.move(DOWN))) {
                 board.gamePiece = board.gamePiece.move(DOWN);
                 draw = true;
@@ -356,7 +343,6 @@ function handleKeyPress(event: KeyboardEvent, board: Board) {
 			break;
 		case "Left": // IE/Edge specific value
 		case "ArrowLeft":
-            // Do something for "left arrow" key press.
             if(!collision(board, board.gamePiece.move(LEFT))) {
                 board.gamePiece = board.gamePiece.move(LEFT);
                 draw = true;
@@ -364,7 +350,6 @@ function handleKeyPress(event: KeyboardEvent, board: Board) {
 			break;
 		case "Right": // IE/Edge specific value
 		case "ArrowRight":
-			// Do something for "right arrow" key press.
             if(!collision(board, board.gamePiece.move(RIGHT))) {
                 board.gamePiece = board.gamePiece.move(RIGHT);
                 draw = true;
@@ -380,13 +365,6 @@ function handleKeyPress(event: KeyboardEvent, board: Board) {
             // Do something for "x"  key press. Rotate clockwise
             board.gamePiece = board.gamePiece.rotate(Rotate.Clockwise);
             draw = true;
-			break;
-		case "Space":
-			// Do something for "space"  key press.
-			break;
-		case "Esc": // IE/Edge specific value
-		case "Escape":
-			// Do something for "esc" key press.
 			break;
 		default:
 			return; // Quit when this doesn't handle the key event.
@@ -536,7 +514,6 @@ function testRowClearing(board: Board) {
     board.populateBoard(testBoard2);
     board.clearFullRows();
     let resultBoard2 = board.convertToString();
-    //console.log(resultBoard2);
     assert(compareBoards(resultBoard2,[
         "..........",
         "..........",
