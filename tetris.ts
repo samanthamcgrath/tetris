@@ -15,6 +15,7 @@ let nextTextWidth = 100;
 let canvasWidth = boardWidth*tileSize*2;
 let canvasHeight = boardHeight*tileSize;
 
+// ID associated with our interval, use to clear interval
 let intervalID: number;
 
 class Tile {
@@ -64,6 +65,59 @@ const RIGHT = new Coord(1,0);
 enum Rotate {
     Clockwise,
     Counterclockwise,
+}
+
+class GamePiece {
+    globalPos: Coord;
+	shape: Coord[];
+    colour: string;
+    rotationPoint: Coord;
+
+	constructor(globalPos: Coord, shape: Coord[], colour: string, rotationPoint: Coord) {       
+        this.globalPos = globalPos;
+        this.shape = shape;
+        this.colour = colour;
+        this.rotationPoint = rotationPoint;
+    }
+
+    move(direction: Coord) : GamePiece {
+
+        let newPiece = this.clone();
+        //console.log(newPiece);
+        newPiece.globalPos = newPiece.globalPos.add(direction);
+        //console.log(newPiece);
+        //console.log("moving");
+        return newPiece;
+    }
+
+    rotate(direction: Rotate) : GamePiece {
+        console.log("rotating");
+        let newPiece = this.clone();
+
+        newPiece.shape = this.shape.map(element => {
+            //console.log(element);
+            let newCoord = element.subtract(this.rotationPoint);
+            if(direction === Rotate.Clockwise) {
+                newCoord = new Coord(-newCoord.y,newCoord.x);
+            } else {
+                newCoord = new Coord(newCoord.y,-newCoord.x);
+            }
+            newCoord = newCoord.add(this.rotationPoint);
+            //console.log(newCoord);
+            return newCoord;
+        });
+        return newPiece;
+    }
+
+    clone() {
+        return new GamePiece(this.globalPos, this.shape, this.colour, this.rotationPoint);
+    }
+    
+    *absoluteCoords() : Iterable<Coord> {
+        for(let el of this.shape) {
+            yield el.add(this.globalPos);
+        }
+    }
 }
 
 function createGamePieceFromTetro(t?: Tetros) : GamePiece {
@@ -127,58 +181,7 @@ function createGamePieceFromTetro(t?: Tetros) : GamePiece {
     return new GamePiece(globalPos,shape,colour,rotationPoint);
 }
 
-class GamePiece {
-    globalPos: Coord;
-	shape: Coord[];
-    colour: string;
-    rotationPoint: Coord;
 
-	constructor(globalPos: Coord, shape: Coord[], colour: string, rotationPoint: Coord) {       
-        this.globalPos = globalPos;
-        this.shape = shape;
-        this.colour = colour;
-        this.rotationPoint = rotationPoint;
-    }
-
-    move(direction: Coord) : GamePiece {
-
-        let newPiece = this.clone();
-        //console.log(newPiece);
-        newPiece.globalPos = newPiece.globalPos.add(direction);
-        //console.log(newPiece);
-        //console.log("moving");
-        return newPiece;
-    }
-
-    rotate(direction: Rotate) : GamePiece {
-        console.log("rotating");
-        let newPiece = this.clone();
-
-        newPiece.shape = this.shape.map(element => {
-            //console.log(element);
-            let newCoord = element.subtract(this.rotationPoint);
-            if(direction === Rotate.Clockwise) {
-                newCoord = new Coord(-newCoord.y,newCoord.x);
-            } else {
-                newCoord = new Coord(newCoord.y,-newCoord.x);
-            }
-            newCoord = newCoord.add(this.rotationPoint);
-            //console.log(newCoord);
-            return newCoord;
-        });
-        return newPiece;
-    }
-
-    clone() {
-        return new GamePiece(this.globalPos, this.shape, this.colour, this.rotationPoint);
-    }
-    
-    *absoluteCoords() : Iterable<Coord> {
-        for(let el of this.shape) {
-            yield el.add(this.globalPos);
-        }
-    }
-}
 
 class Board {
 	private tiles: Tile[][];
